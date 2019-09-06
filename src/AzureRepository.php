@@ -1,0 +1,70 @@
+<?php
+
+namespace TraceOne\Composer;
+
+use Composer\Package\Link;
+
+/**
+ * 
+ */
+class AzureRepository
+{
+    /**
+     * 
+     */
+    protected $organization;
+
+    /**
+     * 
+     */
+    protected $feed;
+
+    /**
+     * 
+     */
+    protected $artifacts = [];
+
+    /**
+     * 
+     */
+    public function __construct(String $organization, String $feed)
+    {
+        $this->organization = $organization;
+        $this->feed = $feed;
+    }
+
+    /**
+     * 
+     */
+    public function getOrganization()
+    {
+        return $this->organization;
+    }
+
+    /**
+     * 
+     */
+    public function getFeed()
+    {
+        return $this->feed;
+    }
+
+    /**
+     * 
+     */
+    public function addArtifact(String $name, String $version)
+    {
+        $this->artifacts[] = [
+            'name' => $name,
+            'version' => $version
+        ];
+    }
+
+    /**
+     * 
+     */
+    public function getArtifacts(): Array
+    {
+        return $this->artifacts;
+    }
+}
