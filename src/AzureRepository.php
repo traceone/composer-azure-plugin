@@ -67,4 +67,12 @@ class AzureRepository
     {
         return $this->artifacts;
     }
+
+    /**
+     *
+     */
+    public function countArtifacts(): Int
+    {
+        return count($this->artifacts);
+    }
 }
