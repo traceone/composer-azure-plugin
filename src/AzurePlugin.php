@@ -16,7 +16,6 @@ use TraceOne\Composer\Helpers;
 /**
  * @todo use Composer cache folder
  * @todo handle version modifiers
- * @todo clean vendor file when removing an Azure package
  */
 class AzurePlugin implements PluginInterface, EventSubscriberInterface, Capable
 {
