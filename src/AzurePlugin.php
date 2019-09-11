@@ -14,6 +14,7 @@ use TraceOne\Composer\AzureRepository;
 use TraceOne\Composer\Helpers;
 
 /**
+ * @todo handle "Your requirements could not be resolved to an installable set of packages." error on dependency update/downgrade
  * @todo clear cache folder on cache clearing
  * @todo handle version modifiers
  */
@@ -128,22 +129,22 @@ class AzurePlugin implements PluginInterface, EventSubscriberInterface, Capable
     }
 
     /**
-     * Parse Azure artifacts required by the package
+     * Parse required Azure packages
      */
     protected function parseRequiredPackages()
     {
         $extra = $this->composer->getPackage()->getExtra();
         $requires = $this->composer->getPackage()->getRequires();
 
-        foreach($extra['azure-repositories'] as [ 'organization' => $organization, 'feed' => $feed, 'artifacts' => $artifacts ])
+        foreach($extra['azure-repositories'] as [ 'organization' => $organization, 'feed' => $feed, 'packages' => $packages ])
         {
             $azure_repository = new AzureRepository($organization, $feed);
 
-            foreach($artifacts as $artifact_name => $package_name)
+            foreach($packages as $package_name)
             {
                 if(array_key_exists($package_name, $requires))
                 {
-                    $azure_repository->addArtifact($artifact_name, $requires[$package_name]->getPrettyConstraint());
+                    $azure_repository->addArtifact($package_name, $requires[$package_name]->getPrettyConstraint());
                 }
             }
 
@@ -205,7 +206,7 @@ class AzurePlugin implements PluginInterface, EventSubscriberInterface, Capable
                 $command = 'az artifacts universal download';
                 $command.= ' --organization ' . 'https://' . $organization;
                 $command.= ' --feed ' . $feed;
-                $command.= ' --name ' . $artifact['name'];
+                $command.= ' --name ' . str_replace('/', '.', $artifact['name']);
                 $command.= ' --version ' . $artifact['version'];
                 $command.= ' --path ' . $artifact_path;
 
