@@ -51,7 +51,7 @@ class AzurePlugin implements PluginInterface, EventSubscriberInterface, Capable
     {
         $extra = $composer->getPackage()->getExtra();
         
-        if(!isset($extra['azure-repositories']) && !is_array($extra['azure-repositories']))
+        if(!isset($extra['azure-repositories']) || !is_array($extra['azure-repositories']))
         {
             return;
         }
@@ -133,12 +133,6 @@ class AzurePlugin implements PluginInterface, EventSubscriberInterface, Capable
     protected function parseRequiredPackages()
     {
         $extra = $this->composer->getPackage()->getExtra();
-        
-        if(!isset($extra['azure-repositories']) && !is_array($extra['azure-repositories']))
-        {
-            return;
-        }
-
         $requires = $this->composer->getPackage()->getRequires();
 
         foreach($extra['azure-repositories'] as [ 'organization' => $organization, 'feed' => $feed, 'artifacts' => $artifacts ])
