@@ -79,15 +79,18 @@ class AzurePlugin implements PluginInterface, EventSubscriberInterface, Capable
     public static function getSubscribedEvents()
     {
         return [
+            InstallerEvents::PRE_DEPENDENCIES_SOLVING   => [ [ 'fetchAzurePackages', 0 ] ],
+            
             ScriptEvents::PRE_INSTALL_CMD   => [ [ 'requireDownload', 0 ] ],
             ScriptEvents::PRE_UPDATE_CMD    => [ [ 'requireDownload', 0 ] ],
             ScriptEvents::POST_INSTALL_CMD  => [ [ 'clean', 0 ] ],
-            ScriptEvents::POST_UPDATE_CMD   => [ [ 'clean', 0 ] ],
-
-            InstallerEvents::PRE_DEPENDENCIES_SOLVING => [ [ 'fetchAzurePackages', 0 ] ]
+            ScriptEvents::POST_UPDATE_CMD   => [ [ 'clean', 0 ] ]
         ];
     }
 
+    /**
+     * Remove every temp Azure files
+     */
     public function clean()
     {
         if(file_exists('./.azure'))
@@ -97,7 +100,7 @@ class AzurePlugin implements PluginInterface, EventSubscriberInterface, Capable
     }
 
     /**
-     * 
+     * Set flag to activate artifacts download from Azure
      */
     public function requireDownload()
     {

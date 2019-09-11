@@ -8,7 +8,7 @@ namespace TraceOne\Composer;
 class Helpers
 {
     /**
-     * 
+     * Compress the provided directory to a zip archive
      */
     public static function buildArchive(String $root_path)
     {
@@ -38,7 +38,7 @@ class Helpers
     }
 
     /**
-     * 
+     * Recursively delete a directory
      */
     public static function removeDirectory(String $root_path)
     {

@@ -2,8 +2,6 @@
 
 namespace TraceOne\Composer;
 
-use Composer\Package\Link;
-
 /**
  * 
  */
