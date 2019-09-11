@@ -14,7 +14,7 @@ use TraceOne\Composer\AzureRepository;
 use TraceOne\Composer\Helpers;
 
 /**
- * @todo use Composer cache folder
+ * @todo clear cache folder on cache clearing
  * @todo handle version modifiers
  */
 class AzurePlugin implements PluginInterface, EventSubscriberInterface, Capable
@@ -28,6 +28,11 @@ class AzurePlugin implements PluginInterface, EventSubscriberInterface, Capable
      * 
      */
     protected $io;
+
+    /**
+     * 
+     */
+    protected $cache_dir;
 
     /**
      * 
@@ -53,6 +58,7 @@ class AzurePlugin implements PluginInterface, EventSubscriberInterface, Capable
         
         $this->composer = $composer;
         $this->io = $io;
+        $this->cache_dir = $this->composer->getConfig()->get('cache-dir') . '/azure';
 
         $this->parseRequiredPackages();
         $this->addAzureRepositories(false);
@@ -82,21 +88,8 @@ class AzurePlugin implements PluginInterface, EventSubscriberInterface, Capable
             InstallerEvents::PRE_DEPENDENCIES_SOLVING   => [ [ 'fetchAzurePackages', 0 ] ],
             
             ScriptEvents::PRE_INSTALL_CMD   => [ [ 'requireDownload', 0 ] ],
-            ScriptEvents::PRE_UPDATE_CMD    => [ [ 'requireDownload', 0 ] ],
-            ScriptEvents::POST_INSTALL_CMD  => [ [ 'clean', 0 ] ],
-            ScriptEvents::POST_UPDATE_CMD   => [ [ 'clean', 0 ] ]
+            ScriptEvents::PRE_UPDATE_CMD    => [ [ 'requireDownload', 0 ] ]
         ];
-    }
-
-    /**
-     * Remove every temp Azure files
-     */
-    public function clean()
-    {
-        if(file_exists('./.azure'))
-        {
-            Helpers::removeDirectory('./.azure');
-        }
     }
 
     /**
@@ -165,7 +158,42 @@ class AzurePlugin implements PluginInterface, EventSubscriberInterface, Capable
     }
 
     /**
-     * Download artifacts to .azure
+     * Add repositories to Composer config
+     */
+    protected function addAzureRepositories($use_compression)
+    {
+        $repositories = [];
+        
+        foreach($this->repositories as $azure_repository)
+        {
+            $organization = $azure_repository->getOrganization();
+            $feed = $azure_repository->getFeed();
+            
+            if($use_compression)
+            {
+                array_unshift($repositories, [
+                    'type' => 'artifact',
+                    'url' => $this->cache_dir . '/' . $organization . '/' . $feed
+                ]);
+            }
+            else
+            {
+                foreach($azure_repository->getArtifacts() as $artifact)
+                {
+                    array_unshift($repositories, [
+                        'type'      => 'path',
+                        'url'       => $this->cache_dir . '/' . $organization . '/' . $feed . '/' . $artifact['name'],
+                        'options'   => [ 'symlink' =>  false ]
+                    ]);
+                }
+            }
+        }
+
+        $this->composer->getConfig()->merge(['repositories' => $repositories]);
+    }
+
+    /**
+     * Download artifacts
      */
     protected function downloadAzureArtifacts($use_compression)
     {
@@ -177,7 +205,7 @@ class AzurePlugin implements PluginInterface, EventSubscriberInterface, Capable
 
             foreach($artifacts as $artifact)
             {
-                $repository_path = '.' . DIRECTORY_SEPARATOR .'.azure' . DIRECTORY_SEPARATOR . $organization . DIRECTORY_SEPARATOR . $feed;
+                $repository_path = $this->cache_dir . DIRECTORY_SEPARATOR . $organization . DIRECTORY_SEPARATOR . $feed;
                 $artifact_path = $repository_path . DIRECTORY_SEPARATOR . $artifact['name'];
 
                 $command = 'az artifacts universal download';
@@ -196,40 +224,5 @@ class AzurePlugin implements PluginInterface, EventSubscriberInterface, Capable
                 }
             }
         }
-    }
-
-    /**
-     * Add repositories to Composer config
-     */
-    protected function addAzureRepositories($use_compression)
-    {
-        $repositories = [];
-        
-        foreach($this->repositories as $azure_repository)
-        {
-            $organization = $azure_repository->getOrganization();
-            $feed = $azure_repository->getFeed();
-            
-            if($use_compression)
-            {
-                array_unshift($repositories, [
-                    'type' => 'artifact',
-                    'url' => './.azure/' . $organization . '/' . $feed
-                ]);
-            }
-            else
-            {
-                foreach($azure_repository->getArtifacts() as $artifact)
-                {
-                    array_unshift($repositories, [
-                        'type'      => 'path',
-                        'url'       => './.azure/' . $organization . '/' . $feed . '/' . $artifact['name'],
-                        'options'   => [ 'symlink' =>  false ]
-                    ]);
-                }
-            }
-        }
-
-        $this->composer->getConfig()->merge(['repositories' => $repositories]);
     }
 }
