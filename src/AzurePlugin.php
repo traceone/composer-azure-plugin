@@ -11,12 +11,11 @@ use Composer\Plugin\PluginInterface;
 use Composer\Script\ScriptEvents;
 
 use TraceOne\Composer\AzureRepository;
-use TraceOne\Composer\Helpers;
 
 /**
- * @todo handle "Your requirements could not be resolved to an installable set of packages." error on dependency update/downgrade
- * @todo clear cache folder on cache clearing
+ * @todo load packages on install/update only
  * @todo handle version modifiers
+ * @todo avoid redownloading cached packages
  */
 class AzurePlugin implements PluginInterface, EventSubscriberInterface, Capable
 {
@@ -59,15 +58,11 @@ class AzurePlugin implements PluginInterface, EventSubscriberInterface, Capable
         
         $this->composer = $composer;
         $this->io = $io;
-        $this->cache_dir = $this->composer->getConfig()->get('cache-dir') . '/azure';
+        $this->cache_dir = str_replace(DIRECTORY_SEPARATOR, '/', $this->composer->getConfig()->get('cache-dir')) . '/azure';
 
         $this->parseRequiredPackages();
-        $this->addAzureRepositories(false);
-        
-        // TEMP: Remove my-package from requires
-        // $requires = $this->composer->getPackage()->getRequires();
-        // unset($requires['trace-one/my-package']);
-        // $this->composer->getPackage()->setRequires($requires);
+        $this->fetchAzurePackages();
+        $this->addAzureRepositories();
     }
 
     /**
@@ -86,10 +81,10 @@ class AzurePlugin implements PluginInterface, EventSubscriberInterface, Capable
     public static function getSubscribedEvents()
     {
         return [
-            InstallerEvents::PRE_DEPENDENCIES_SOLVING   => [ [ 'fetchAzurePackages', 0 ] ],
+            // InstallerEvents::PRE_DEPENDENCIES_SOLVING   => [ [ 'fetchAzurePackages', 0 ] ],
             
-            ScriptEvents::PRE_INSTALL_CMD   => [ [ 'requireDownload', 0 ] ],
-            ScriptEvents::PRE_UPDATE_CMD    => [ [ 'requireDownload', 0 ] ]
+            ScriptEvents::PRE_INSTALL_CMD   => [ [ 'requireDownload', 50000 ] ],
+            ScriptEvents::PRE_UPDATE_CMD    => [ [ 'requireDownload', 50000 ] ]
         ];
     }
 
@@ -106,10 +101,10 @@ class AzurePlugin implements PluginInterface, EventSubscriberInterface, Capable
      */
     public function fetchAzurePackages()
     {
-        if(!$this->require_download)
-        {
-            return;
-        }
+        // if(!$this->require_download)
+        // {
+        //     return;
+        // }
 
         $package_count = 0;
 
@@ -125,7 +120,7 @@ class AzurePlugin implements PluginInterface, EventSubscriberInterface, Capable
 
         $this->io->write('');
         $this->io->write('<info>Fecthing packages from Azure</info>');
-        $this->downloadAzureArtifacts(false);
+        $this->downloadAzureArtifacts();
     }
 
     /**
@@ -155,7 +150,7 @@ class AzurePlugin implements PluginInterface, EventSubscriberInterface, Capable
     /**
      * Add repositories to Composer config
      */
-    protected function addAzureRepositories($use_compression)
+    protected function addAzureRepositories()
     {
         $repositories = [];
         
@@ -164,23 +159,13 @@ class AzurePlugin implements PluginInterface, EventSubscriberInterface, Capable
             $organization = $azure_repository->getOrganization();
             $feed = $azure_repository->getFeed();
             
-            if($use_compression)
+            foreach($azure_repository->getArtifacts() as $artifact)
             {
                 array_unshift($repositories, [
-                    'type' => 'artifact',
-                    'url' => $this->cache_dir . '/' . $organization . '/' . $feed
+                    'type'      => 'path',
+                    'url'       => implode('/', [ $this->cache_dir, $organization, $feed, $artifact['name'], $artifact['version'] ]),
+                    'options'   => [ 'symlink' =>  false ]
                 ]);
-            }
-            else
-            {
-                foreach($azure_repository->getArtifacts() as $artifact)
-                {
-                    array_unshift($repositories, [
-                        'type'      => 'path',
-                        'url'       => $this->cache_dir . '/' . $organization . '/' . $feed . '/' . $artifact['name'] . '/' . $artifact['version'],
-                        'options'   => [ 'symlink' =>  false ]
-                    ]);
-                }
             }
         }
 
@@ -190,7 +175,7 @@ class AzurePlugin implements PluginInterface, EventSubscriberInterface, Capable
     /**
      * Download artifacts
      */
-    protected function downloadAzureArtifacts($use_compression)
+    protected function downloadAzureArtifacts()
     {
         foreach($this->repositories as $azure_repository)
         {
@@ -200,23 +185,17 @@ class AzurePlugin implements PluginInterface, EventSubscriberInterface, Capable
 
             foreach($artifacts as $artifact)
             {
-                $repository_path = $this->cache_dir . DIRECTORY_SEPARATOR . $organization . DIRECTORY_SEPARATOR . $feed;
-                $artifact_path = $repository_path . DIRECTORY_SEPARATOR . $artifact['name'] . DIRECTORY_SEPARATOR . $artifact['version'];
+                $path = implode('/', [ $this->cache_dir, $organization, $feed, $artifact['name'], $artifact['version'] ]);
+                $path = str_replace('/', DIRECTORY_SEPARATOR, $path);
 
                 $command = 'az artifacts universal download';
                 $command.= ' --organization ' . 'https://' . $organization;
                 $command.= ' --feed ' . $feed;
                 $command.= ' --name ' . str_replace('/', '.', $artifact['name']);
                 $command.= ' --version ' . $artifact['version'];
-                $command.= ' --path ' . $artifact_path;
+                $command.= ' --path ' . $path;
 
-                shell_exec($command);
-
-                if($use_compression)
-                {
-                    Helpers::buildArchive($artifact_path);
-                    Helpers::removeDirectory($artifact_path);
-                }
+                exec($command);
             }
         }
     }
