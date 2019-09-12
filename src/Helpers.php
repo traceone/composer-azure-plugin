@@ -64,4 +64,30 @@ class Helpers
         closedir($dir);
         rmdir($root_path);
     }
+
+    /**
+     * Recursively copy a directory
+     */
+    public static function copyDirectory(String $src, String $dst)
+    { 
+        $dir = opendir($src);
+        @mkdir($dst);
+        
+        while(false !== ($file = readdir($dir)))
+        {
+            if(($file != '.') && ($file != '..'))
+            {
+                if(is_dir($src . '/' . $file))
+                {
+                    self::copyDirectory($src . '/' . $file, $dst . '/' . $file);
+                }
+                else
+                {
+                    copy($src . '/' . $file, $dst . '/' . $file);
+                }
+            }
+        }
+
+        closedir($dir);
+    } 
 }

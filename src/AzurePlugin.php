@@ -177,7 +177,7 @@ class AzurePlugin implements PluginInterface, EventSubscriberInterface, Capable
                 {
                     array_unshift($repositories, [
                         'type'      => 'path',
-                        'url'       => $this->cache_dir . '/' . $organization . '/' . $feed . '/' . $artifact['name'],
+                        'url'       => $this->cache_dir . '/' . $organization . '/' . $feed . '/' . $artifact['name'] . '/' . $artifact['version'],
                         'options'   => [ 'symlink' =>  false ]
                     ]);
                 }
@@ -201,7 +201,7 @@ class AzurePlugin implements PluginInterface, EventSubscriberInterface, Capable
             foreach($artifacts as $artifact)
             {
                 $repository_path = $this->cache_dir . DIRECTORY_SEPARATOR . $organization . DIRECTORY_SEPARATOR . $feed;
-                $artifact_path = $repository_path . DIRECTORY_SEPARATOR . $artifact['name'];
+                $artifact_path = $repository_path . DIRECTORY_SEPARATOR . $artifact['name'] . DIRECTORY_SEPARATOR . $artifact['version'];
 
                 $command = 'az artifacts universal download';
                 $command.= ' --organization ' . 'https://' . $organization;
