@@ -1,6 +1,5 @@
 <a href="https://packagist.org/packages/trace-one/azure-composer-plugin"><img src="https://poser.pugx.org/trace-one/azure-composer-plugin/d/total.svg" alt="Total Downloads"></a>
 <a href="https://packagist.org/packages/trace-one/azure-composer-plugin"><img src="https://poser.pugx.org/trace-one/azure-composer-plugin/v/stable.svg" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/trace-one/azure-composer-plugin"><img src="https://poser.pugx.org/trace-one/azure-composer-plugin/license.svg" alt="License"></a>
 
 # Composer Azure Plugin
 Composer Azure plugin is an attempt to use Composer with Azure DevOps artifacts, via universal packages.
