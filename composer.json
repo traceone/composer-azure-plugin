@@ -3,7 +3,7 @@
     "description": "Trace One Azure Composer plugin",
     "version": "1.0.0",
     "type": "composer-plugin",
-    "license": "proprietary",
+    "license": "MIT",
     "keywords": [
         "traceone",
         "azure",
