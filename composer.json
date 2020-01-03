@@ -1,5 +1,5 @@
 {
-    "name": "trace-one/azure-composer-plugin",
+    "name": "trace-one/composer-azure-plugin",
     "description": "Trace One Azure Composer plugin",
     "version": "1.0.0",
     "type": "composer-plugin",
